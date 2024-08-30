@@ -27,6 +27,7 @@ fn process_line_for_number(line: &str) -> u32 {
         if c.is_numeric() {
             numbers.push_back(c);
         }
+        // part two processing
     }
 
     let number: u32;
