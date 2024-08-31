@@ -57,6 +57,7 @@ fn main() {
     let contents: String = fs::read_to_string("src/input.txt")
         .expect("Something went wrong reading the file");
 
+    // TEST CONTENTS
     // let contents = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n\
     // Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n\
     // Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n\
@@ -65,6 +66,7 @@ fn main() {
 
     let lines: str::Lines<'_> = contents.lines();
 
+    /* PART 1
     let blue_cubes: u32 = 14;
     let red_cubes: u32 = 12;
     let green_cubes: u32 = 13;
@@ -84,6 +86,18 @@ fn main() {
 
     for game in games {
         sum += game.id;
+    }
+    
+    println!("Sum: {}", sum);
+    */
+
+    /* PART 2 */
+    let mut sum: u32 = 0;
+
+    for line in lines {
+        let game = process_line(line);
+
+        sum += game.max_blue * game.max_red * game.max_green;
     }
 
     println!("Sum: {}", sum);
