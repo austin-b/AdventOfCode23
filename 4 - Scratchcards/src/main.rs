@@ -1,8 +1,8 @@
 // https://adventofcode.com/2023/day/4
 
-use std::fs;
+use std::{collections::VecDeque, fs};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Card {
     id: i32,
     winning_numbers: Vec<i32>,
@@ -15,7 +15,7 @@ fn main() {
     // let contents: String = fs::read_to_string("src/input.txt")
     //     .expect("Something went wrong reading the file");
 
-    let mut cards: Vec<Card> = Vec::new();
+    let mut cards: VecDeque<Card> = VecDeque::new();
 
     // process input
     for line in contents.lines() {
@@ -28,8 +28,8 @@ fn main() {
             numbers: numbers[1].split_whitespace().collect::<Vec<&str>>().iter().map(|x| x.trim().parse().unwrap()).collect::<Vec<i32>>(),
         };
 
-        println!("{:?}", card);
-        cards.push(card);
+        // println!("{:?}", card);
+        cards.push_back(card);
     }
 
     /* PART 1
@@ -42,9 +42,21 @@ fn main() {
     println!("Total points: {}", total_points);
     */
 
-    /* PART 2 */
+    /* PART 2  */
+    loop {
+
+        let card = cards.pop_front();
+
+        if card.is_some() && cards.len() > 0 {
+            println!("{:?}", card);
+        } else {
+            break;
+        }
+
+    }
+
     for card in &cards {
-        process_card(card, &cards);
+        println!("{:?}", card);
     }
 
     println!("Total cards: {}", cards.len());
@@ -66,7 +78,7 @@ fn get_points(card: &Card) -> i32 {
     points
 }
 
-fn process_card(card: &Card, cards: &Vec<Card>) {
+fn number_of_matches(card: &Card) -> i32 {
     let mut matches = 0;
 
     for number in &card.numbers {
@@ -75,7 +87,5 @@ fn process_card(card: &Card, cards: &Vec<Card>) {
         }
     }
 
-    for i in 1..(matches+1) {
-        cards.copy_within((card.id - 1 + i)..(card.id - 1 + i)+1, cards.len())
-    }
+    matches
 }
