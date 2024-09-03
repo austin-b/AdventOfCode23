@@ -1,5 +1,8 @@
 // https://adventofcode.com/2023/day/4
 
+use core::num;
+#[allow(unused_imports, dead_code)]
+
 use std::{collections::VecDeque, fs};
 
 #[derive(Debug, Clone)]
@@ -43,23 +46,58 @@ fn main() {
     */
 
     /* PART 2  */
+    let mut total_len = 0;
     loop {
-
         let card = cards.pop_front();
 
+        // debugging
+        // if total_len > 10 {
+        //     break;
+        // }
+
         if card.is_some() && cards.len() > 0 {
+
+            total_len += 1;
+
             println!("{:?}", card);
-        } else {
+
+            let num_matches = number_of_matches(&card.unwrap());
+
+            println!("Matches: {}", num_matches);
+
+            let mut cards_to_add: Vec<Card> = Vec::new();
+
+            // create new cards
+            for i in 0..num_matches {
+                println!("i: {}", i);
+                let new_card = Card {
+                    id: cards[i as usize].id,
+                    winning_numbers: cards[i as usize].winning_numbers.clone(),
+                    numbers: cards[i as usize].numbers.clone(),
+                };
+
+                println!("Pushing: {:?}", new_card);
+
+                cards_to_add.push(new_card);
+            }
+
+            // reverse the order of the cards to add so we prepend correctly
+            cards_to_add.reverse();
+
+            // add new cards to the front of the deck
+            for card in cards_to_add {
+                cards.push_front(card);
+            }
+
+            println!("Cards: {:?}", cards);
+
+        } else if card.is_some() && cards.len() == 0 {    // we know it will never require processing the last card, so we can end here
+            total_len += 1;
             break;
         }
-
     }
 
-    for card in &cards {
-        println!("{:?}", card);
-    }
-
-    println!("Total cards: {}", cards.len());
+    println!("Total cards: {}", total_len); // 
 }
 
 fn get_points(card: &Card) -> i32 {
