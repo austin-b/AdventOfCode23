@@ -47,19 +47,25 @@ fn main() {
 
     /* PART 2  */
     let mut total_len = 0;
+
+    let mut num_cards = [0; 6]; // debugging
     loop {
         let card = cards.pop_front();
 
         // debugging
-        // if total_len > 10 {
+        // if total_len > 12 {
         //     break;
         // }
+
+        // debugging
+        let id = card.as_ref().unwrap().id-1;
+        num_cards[id as usize] = num_cards[id as usize] + 1;
 
         if card.is_some() && cards.len() > 0 {
 
             total_len += 1;
 
-            println!("{:?}", card);
+            println!("{:?}", card); // debugging
 
             let num_matches = number_of_matches(&card.unwrap());
 
@@ -82,14 +88,19 @@ fn main() {
             }
 
             // reverse the order of the cards to add so we prepend correctly
-            cards_to_add.reverse();
+            //cards_to_add.reverse();
 
             // add new cards to the front of the deck
             for card in cards_to_add {
-                cards.push_front(card);
+                //cards.push_front(card);
+                cards.push_back(card);
             }
 
-            println!("Cards: {:?}", cards);
+            println!("Cards:");
+            for card in &cards {
+                println!("{:?}", card)
+            }
+            println!("total length: {}", total_len);
 
         } else if card.is_some() && cards.len() == 0 {    // we know it will never require processing the last card, so we can end here
             total_len += 1;
@@ -97,7 +108,8 @@ fn main() {
         }
     }
 
-    println!("Total cards: {}", total_len); // 
+    println!("Total cards: {}", total_len);
+    println!("Card counts: {:?}", num_cards);
 }
 
 fn get_points(card: &Card) -> i32 {
