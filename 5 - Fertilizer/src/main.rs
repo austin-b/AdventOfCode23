@@ -32,6 +32,9 @@ fn main() {
     // 52 50 48     dest_range_start src_range_start range_length
     // 50 98 2
 
+    // TODO: refactor the vecs of ranges to a 1-to-1 mapping for quicker lookups
+    // fill in zero values for the ranges that are not mapped?
+
     for b in blocks {
         if b.contains("seeds") {
             println!("b: {:?}", b);
