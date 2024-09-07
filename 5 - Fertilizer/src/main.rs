@@ -4,10 +4,11 @@
 #[allow(dead_code)]
 use std::fs;
 use std::{
-    collections::{btree_map::Range, VecDeque},
+    collections::VecDeque,
     ops::RangeInclusive,
     time::Instant,
 };
+use rayon::prelude::*;
 
 fn main() {
     let now = Instant::now();
@@ -35,9 +36,6 @@ fn main() {
     // seed-to-soil map:
     // 52 50 48     dest_range_start src_range_start range_length
     // 50 98 2
-
-    // TODO: refactor the vecs of ranges to a 1-to-1 mapping for quicker lookups
-    // fill in zero values for the ranges that are not mapped?
 
     for b in blocks {
         if b.contains("seeds") {
@@ -149,11 +147,9 @@ fn main() {
     // println!("temperature_to_humidity: {:?}", &temperature_to_humidity);
     // println!("humidity_to_location: {:?}", &humidity_to_location);
 
-    let mut lowest: u64 = 0;
-
-    for range in seed_ranges {
-        let range_lowest = seed_range_to_location(
-            range,
+    let lowest: u64 = seed_ranges.par_iter().map(|range| {
+        seed_range_to_location(
+            range.clone(),
             seed_to_soil.clone(),
             soil_to_fertilizer.clone(),
             fertilizer_to_water.clone(),
@@ -161,12 +157,8 @@ fn main() {
             light_to_temperature.clone(),
             temperature_to_humidity.clone(),
             humidity_to_location.clone(),
-        );
-
-        if lowest == 0 || range_lowest < lowest {
-            lowest = range_lowest;
-        }
-    }
+        )
+    }).min().unwrap();
 
     println!("lowest location: {:?}", lowest);
 
