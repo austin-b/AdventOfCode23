@@ -147,6 +147,7 @@ fn main() {
     // println!("temperature_to_humidity: {:?}", &temperature_to_humidity);
     // println!("humidity_to_location: {:?}", &humidity_to_location);
 
+    // par_iter turns this into parallel processing
     let lowest: u64 = seed_ranges.par_iter().map(|range| {
         seed_range_to_location(
             range.clone(),
@@ -175,7 +176,8 @@ fn seed_range_to_location(
     temperature_to_humidity: Vec<(RangeInclusive<u64>, u64)>,
     humidity_to_location: Vec<(RangeInclusive<u64>, u64)>,
 ) -> u64 {
-    println!("processing range: {:?}", &range);
+    let (low, high) = range.clone().into_inner();
+    println!("processing range: {} - {}", low, high);
 
     let mut lowest: u64 = 0;
 
@@ -268,6 +270,8 @@ fn seed_range_to_location(
             lowest = location;
         }
     }
+
+    println!("lowest for {} - {}: {}", low, high, lowest);
 
     lowest
 }
