@@ -1,7 +1,5 @@
 // https://adventofcode.com/2023/day/7
 
-#[allow(dead_code)]
-
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 enum Card {
     Two,
