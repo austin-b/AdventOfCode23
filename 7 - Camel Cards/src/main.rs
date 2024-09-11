@@ -54,6 +54,7 @@ impl Hand {
             }
         }
 
+        // Shouldn't reach this point, but Default
         std::cmp::Ordering::Equal
     }
 }
@@ -139,32 +140,39 @@ fn find_type(cards: &[Card; 5]) -> HandType {
 
     let mut card_counts: Vec<(Card, i8)> = Vec::new();
 
+    let mut jack_count = 0;
+
     // Count labels
     for card in cards {
-        let mut found = false;
-        for (c, count) in card_counts.iter_mut() {
-            if card == c {
-                *count += 1;
-                found = true;
-                break;
+        if card == &Card::Jack {    // Jacks are wild, so we don't need to add them to the normal count
+            jack_count += 1;
+        } else {    // Normal cards
+            let mut found = false;
+            for (c, count) in card_counts.iter_mut() {
+                if card == c {
+                    *count += 1;
+                    found = true;
+                    break;
+                }
+            }
+
+            if !found {
+                card_counts.push((*card, 1));
             }
         }
-
-        if !found {
-            card_counts.push((*card, 1));
-        }
-    }
-
-    // Sort by card type in descending order
-    card_counts.sort_by(|a, b| b.0.cmp(&a.0));
-
-    // Check for Jacks
-    if card_counts[card_counts.len()-1].0 == Card::Jack {
-        card_counts[0].1 += card_counts[card_counts.len()-1].1;
     }
 
     // Sort by count in descending order
     card_counts.sort_by(|a, b| b.1.cmp(&a.1));
+
+    // Add Jacks to highest count
+    if jack_count > 0 {
+        if card_counts.len() == 0 {        // Edge case where there are no other cards
+            card_counts.push((Card::Jack, jack_count));
+        } else {
+            card_counts[0].1 += jack_count;
+        }
+    }
 
     // Check for hand types
     let first_card_count = card_counts[0].1;
