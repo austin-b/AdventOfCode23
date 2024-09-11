@@ -2,8 +2,9 @@
 
 use std::fs;
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
 enum Card {
+    Jack,
     Two,
     Three,
     Four,
@@ -13,7 +14,6 @@ enum Card {
     Eight,
     Nine,
     Ten,
-    Jack,
     Queen,
     King,
     Ace,
@@ -153,6 +153,14 @@ fn find_type(cards: &[Card; 5]) -> HandType {
         if !found {
             card_counts.push((*card, 1));
         }
+    }
+
+    // Sort by card type in descending order
+    card_counts.sort_by(|a, b| b.0.cmp(&a.0));
+
+    // Check for Jacks
+    if card_counts[card_counts.len()-1].0 == Card::Jack {
+        card_counts[0].1 += card_counts[card_counts.len()-1].1;
     }
 
     // Sort by count in descending order
