@@ -1,4 +1,6 @@
 // https://adventofcode.com/2023/day/8
+// TODO: per the Internet, bruteforcing this will take days if not weeks or months: https://www.reddit.com/r/adventofcode/comments/18dgbhq/2023_day_8_part_2_this_must_be_the_way/
+//       will have to come back to this one later
 
 use std::fs;
 use std::collections::HashMap;
@@ -16,10 +18,10 @@ fn main() {
     let contents: String = fs::read_to_string("src/input.txt")
         .expect("Something went wrong reading the file");
 
-    let pieces: Vec<&str> = contents.split("\r\n\r\n").collect();
+    let pieces: Vec<&str> = contents.split("\n\n").collect();
     // println!("{:?}", pieces);
     let directions: &str = pieces[0];
-    let nodes_str: Vec<&str> = pieces[1].split("\r\n").collect();
+    let nodes_str: Vec<&str> = pieces[1].split("\n").collect();
 
     let mut nodes: HashMap<&str, (&str, &str)> = HashMap::new();
     let mut current_nodes: Vec<&str> = Vec::new();
@@ -62,7 +64,7 @@ fn main() {
                     new_node = node.0;
                 }
 
-                found = found && new_node.ends_with("Z");
+                found = found && new_node.ends_with('Z');
 
                 next_step_nodes.push(new_node);
             }
@@ -71,6 +73,10 @@ fn main() {
 
             step_count += 1;
 
+            if step_count % 1000000 == 0 {
+                println!("{:?}", step_count);
+            }
+
             if found {
                 break 'top;
             }
@@ -78,4 +84,5 @@ fn main() {
     }
 
     println!("{:?}", step_count);
+    println!("{:?}", current_nodes);
 }
