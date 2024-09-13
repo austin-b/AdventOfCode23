@@ -1,9 +1,16 @@
 // https://adventofcode.com/2023/day/9
 
+use std::fs;
+use rayon::prelude::*;
+
 fn main() {
     
     // EXAMPLE
-    let contents = "0 3 6 9 12 15\n1 3 6 10 15 21\n10 13 16 21 30 45";
+    // let contents = "0 3 6 9 12 15\n1 3 6 10 15 21\n10 13 16 21 30 45";
+
+    // PUZZLE
+    let contents: String = fs::read_to_string("src/input.txt")
+        .expect("Something went wrong reading the file");
 
     let mut sequences: Vec<Vec<i32>> = Vec::new();
 
@@ -14,17 +21,16 @@ fn main() {
 
     println!("{:?}", sequences);
 
-    for sequence in sequences {
-        let next_number = find_next_number(sequence);
-        println!("{:?}", next_number);
-    }
+    let sum = sequences.par_iter().map(|sequence| find_next_number(sequence.clone())).sum::<i32>();
+
+    println!("{:?}", sum);
 }
 
 fn find_next_number(sequence: Vec<i32>) -> i32 {
-    let mut next_number = 0;
-
     let mut differences: Vec<Vec<i32>> = Vec::new();
     let mut sequence = sequence.clone();
+
+    differences.push(sequence.clone());
 
     'top: loop {
         let mut layer: Vec<i32> = Vec::new();
@@ -37,22 +43,23 @@ fn find_next_number(sequence: Vec<i32>) -> i32 {
             layer.push(difference);
         }
 
-        if !found {
-            differences.push(layer.clone());
-            sequence = layer.clone();
-            println!("{:?}", differences);
-        } else {
+        differences.push(layer.clone());
+        sequence = layer.clone();
+        // println!("{:?}", differences);
+        
+        if found {
             break 'top;
         }
     }
 
-    loop {
-        if let layer: Vec<i32> = differences.pop() {
-        
-        }
+    let mut delta: i32 = 0;
+    for i in (0..differences.len()).rev() {
+        let layer = &mut differences[i];
+        delta = layer[layer.len()-1] + delta;
+        layer.push(delta);
     }
 
-    println!("{:?}", differences);
+    // println!("{:?}", differences);
 
-    next_number
+    differences[0][differences[0].len()-1]
 }
