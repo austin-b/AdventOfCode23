@@ -2,7 +2,7 @@
 
 use std::fs;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 enum Tiles {
     NS,
     EW,
@@ -33,20 +33,13 @@ fn main() {
     // EXAMPLE 3: slightly more complex loop
     // let contents = "..F7.\n.FJ|.\nSJ.L7\n|F--J\nLJ...";
 
-    // EXAMPLE 4: simpler loop for finding inside nodes
-    // let contents = "...........\n.S-------7.\n.|F-----7|.\n.||.....||.\n.||.....||.\n.|L-7.F-J|.\n.|..|.|..|.\n.L--J.L--J.\n...........";
-
-    // EXAMPLE 5: more complex loop for finding inside nodes
-    let contents = "FF7FSF7F7F7F7F7F---7\nL|LJ||||||||||||F--J\nFL-7LJLJ||||||LJL-77\nF--JF--7||LJLJ7F7FJ-\nL---JF-JLJ.||-FJLJJ7\n|F|F-JF---7F7-L7L|7|\n|FFJF7L7F-JF7|JL---7\n7-L-JL7||F7|L7F-7F7|\nL.L7LFJ|||||FJL7||LJ\nL7JLJL-JLJLJL--JLJ.L";
-
     // PUZZLE INPUT
-    // let contents = fs::read_to_string("src/input.txt")
-    //     .expect("Something went wrong reading the file");
+    let contents = fs::read_to_string("src/input.txt")
+        .expect("Something went wrong reading the file");
 
     let mut map: Vec<Vec<Tiles>> = Vec::new();
     let mut starting: (i32, i32) = (0, 0);
 
-    // turn map into tiles
     for (i, row) in contents.lines().enumerate() {
         let mut row_vec: Vec<Tiles> = Vec::new();
         for (j, c) in row.chars().enumerate() {
@@ -76,9 +69,9 @@ fn main() {
         map.push(row_vec);
     }
 
-    // for row in &map {
-    //     println!("{:?}", row);
-    // }
+    for row in &map {
+        println!("{:?}", row);
+    }
     println!("starting: {starting:?}");
 
     let path = find_path(&map, starting);
@@ -90,24 +83,6 @@ fn main() {
     println!("path length: {}", path.len());
     println!("steps: {}", path[path.len()-1].1);
     println!("steps / 2: {}", path[path.len()-1].1 / 2);
-
-    // redraw map for easier processing
-    for (i, row) in map.clone().iter().enumerate() {
-        for (j, _) in row.iter().enumerate() {
-            if !path.iter().any(|(pos, _)| *pos == (i.try_into().unwrap(),j.try_into().unwrap())) {
-                map[i][j] = Tiles::G;
-            }
-        }
-    }
-
-    for row in &map {
-        println!("{:?}", row);
-    }
-
-    let count = find_number_inside_nodes(&map);
-
-    println!("count of inside nodes: {}", count);
-    println!("1%2 = {}", 1%2);
 
     generate_new_map(map.len(), map[0].len(), path);
 }
@@ -207,59 +182,6 @@ fn next_step(current_tile: Tiles, from_direction: Direction) -> Option<((i32, i3
         }
         _ => None,
     }
-}
-
-fn find_number_inside_nodes(map: &Vec<Vec<Tiles>>) -> usize {
-    let mut count = 0;
-
-    for (i, row) in map.iter().enumerate() {
-        for (j, cell) in row.iter().enumerate() {
-            if *cell == Tiles::G {
-                if is_inside_node(map, (i, j)) {
-                    count += 1;
-                    println!("inside node: {i:?} {j:?}");
-                }
-            }
-        }
-    }
-
-    count
-}
-
-// https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
-fn is_inside_node(map: &Vec<Vec<Tiles>>, pos: (usize, usize)) -> bool {
-    let mut is_inside = false;
-
-    let mut path_intersections = 0;
-
-    let (row, column) = pos;
-
-    // check to the right
-    for i in column+1..map[row].len() {
-        if map[row][i] != Tiles::G {
-            path_intersections += 1;
-        }
-    }
-    if path_intersections % 2 == 1 {
-        is_inside = true;
-    }
-
-    // check to the left
-    path_intersections = 0;
-    for i in (0..column).rev() {
-        if map[row][i] != Tiles::G {
-            path_intersections += 1;
-        }
-    }
-
-    // checking both sides prevents edge cases of being on the edge
-    if path_intersections % 2 != 1 {
-        is_inside = is_inside && false;
-    }
-
-    println!("pos: {pos:?}, path_intersections: {path_intersections:?}, is_inside: {is_inside:?}");
-
-    is_inside
 }
 
 fn generate_new_map(height: usize, width: usize, path: Vec<((i32, i32), usize)>) {
