@@ -1,4 +1,7 @@
 // https://adventofcode.com/2023/day/10
+//
+// For inside node calculation:
+// https://web.archive.org/web/20130126163405/http://geomalgorithms.com/a03-_inclusion.html
 
 use std::fs;
 
@@ -14,7 +17,7 @@ enum Tiles {
     S,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Direction {
     N,
     E,
@@ -37,11 +40,11 @@ fn main() {
     // let contents = "...........\n.S-------7.\n.|F-----7|.\n.||.....||.\n.||.....||.\n.|L-7.F-J|.\n.|..|.|..|.\n.L--J.L--J.\n...........";
 
     // EXAMPLE 5: more complex loop for finding inside nodes
-    let contents = "FF7FSF7F7F7F7F7F---7\nL|LJ||||||||||||F--J\nFL-7LJLJ||||||LJL-77\nF--JF--7||LJLJ7F7FJ-\nL---JF-JLJ.||-FJLJJ7\n|F|F-JF---7F7-L7L|7|\n|FFJF7L7F-JF7|JL---7\n7-L-JL7||F7|L7F-7F7|\nL.L7LFJ|||||FJL7||LJ\nL7JLJL-JLJLJL--JLJ.L";
+    // let contents = "FF7FSF7F7F7F7F7F---7\nL|LJ||||||||||||F--J\nFL-7LJLJ||||||LJL-77\nF--JF--7||LJLJ7F7FJ-\nL---JF-JLJ.||-FJLJJ7\n|F|F-JF---7F7-L7L|7|\n|FFJF7L7F-JF7|JL---7\n7-L-JL7||F7|L7F-7F7|\nL.L7LFJ|||||FJL7||LJ\nL7JLJL-JLJLJL--JLJ.L";
 
     // PUZZLE INPUT
-    // let contents = fs::read_to_string("src/input.txt")
-    //     .expect("Something went wrong reading the file");
+    let contents = fs::read_to_string("src/input.txt")
+        .expect("Something went wrong reading the file");
 
     let mut map: Vec<Vec<Tiles>> = Vec::new();
     let mut starting: (i32, i32) = (0, 0);
@@ -88,39 +91,39 @@ fn main() {
     }
 
     println!("path length: {}", path.len());
-    println!("steps: {}", path[path.len()-1].1);
-    println!("steps / 2: {}", path[path.len()-1].1 / 2);
+    println!("steps: {}", path.len()-1);    // -1 because we start at 0
+    println!("steps / 2: {}", path.len()-1 / 2);
 
     // redraw map for easier processing
-    for (i, row) in map.clone().iter().enumerate() {
-        for (j, _) in row.iter().enumerate() {
-            if !path.iter().any(|(pos, _)| *pos == (i.try_into().unwrap(),j.try_into().unwrap())) {
-                map[i][j] = Tiles::G;
-            }
+    let mut new_map: Vec<Vec<(Tiles, Direction)>> = Vec::new();
+    for row in map.iter() {
+        let mut new_row: Vec<(Tiles, Direction)> = Vec::new();
+        for _ in row.iter() {
+            new_row.push((Tiles::G, Direction::N));
         }
+        new_map.push(new_row);
+    }
+    for (pos, direction) in &path {
+        new_map[pos.0 as usize][pos.1 as usize] = (map[pos.0 as usize][pos.1 as usize], *direction);
     }
 
     for row in &map {
         println!("{:?}", row);
     }
 
-    let count = find_number_inside_nodes(&map);
+    let count = find_number_inside_nodes(&new_map);
 
     println!("count of inside nodes: {}", count);
-    println!("1%2 = {}", 1%2);
 
     generate_new_map(map.len(), map[0].len(), path);
 }
 
-fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), usize)> {
-    let mut path: Vec<((i32, i32), usize)> = Vec::new();
+fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), Direction)> {
+    let mut path: Vec<((i32, i32), Direction)> = Vec::new();
     let mut current_position: (i32, i32) = starting;
     let mut from_direction: Option<Direction> = None;
-    let mut steps: usize = 0;
 
-    path.push((current_position, steps));
-
-    // Go through the available directions and find a valid one from starting position
+        // Go through the available directions and find a valid one from starting position
     // There should only be 2 from the starting position, but we will check all 4 as we don't know initially
     // The path goes in a loop, so it does not matter which direction we start with
     let tests = [((1,0), Direction::N), ((0,-1), Direction::E), ((-1, 0), Direction::S), ((0,1), Direction::W)];
@@ -128,10 +131,13 @@ fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), us
         let next = next_step(map[(current_position.0+step.0) as usize][(current_position.1+step.1) as usize], direction);
         // println!("next: {next:?}");
         if next.is_some() {
+            // push the starting position
+            path.push((current_position, direction));
+
+            // move to the next position and push
             current_position = (current_position.0+step.0, current_position.1+step.1);
             from_direction = Some(next.unwrap().1);
-            steps += 1;
-            path.push((current_position, steps));
+            path.push((current_position, from_direction.unwrap()));
             break;
         }
     }
@@ -142,7 +148,7 @@ fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), us
 
     let mut from_direction = from_direction.unwrap();
 
-    println!("current_pos: {current_position:?}, from_dir: {from_direction:?}, steps: {steps:?}");
+    // println!("current_pos: {current_position:?}, from_dir: {from_direction:?}, steps: {:?}", path.len()-1);
 
     loop {
         let next = next_step(map[current_position.0 as usize][current_position.1 as usize], from_direction);
@@ -150,8 +156,7 @@ fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), us
         if next.is_some() {
             current_position = (current_position.0+next.as_ref().unwrap().0.0, current_position.1+next.as_ref().unwrap().0.1);
             from_direction = next.unwrap().1;
-            steps += 1;
-            path.push((current_position, steps));
+            path.push((current_position, from_direction));
         } else {
             break;
         }
@@ -161,6 +166,7 @@ fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), us
 }
 
 // output: what to add to the current position, and the direction you're coming from into new position
+// TODO: calculate winding number here?
 fn next_step(current_tile: Tiles, from_direction: Direction) -> Option<((i32, i32), Direction)> {
     match current_tile {
         Tiles::NS => {
@@ -209,13 +215,14 @@ fn next_step(current_tile: Tiles, from_direction: Direction) -> Option<((i32, i3
     }
 }
 
-fn find_number_inside_nodes(map: &Vec<Vec<Tiles>>) -> usize {
+fn find_number_inside_nodes(map: &Vec<Vec<(Tiles, Direction)>>) -> usize {
     let mut count = 0;
 
     for (i, row) in map.iter().enumerate() {
-        for (j, cell) in row.iter().enumerate() {
-            if *cell == Tiles::G {
-                if is_inside_node(map, (i, j)) {
+        for (j, (tile, _)) in row.iter().enumerate() {
+            if *tile == Tiles::G && is_left(row, j) == false && is_right(row, j) == false {
+                println!("checking node: {i:?} {j:?}");
+                if is_inside_node(row, j) {
                     count += 1;
                     println!("inside node: {i:?} {j:?}");
                 }
@@ -226,46 +233,63 @@ fn find_number_inside_nodes(map: &Vec<Vec<Tiles>>) -> usize {
     count
 }
 
-// https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
-fn is_inside_node(map: &Vec<Vec<Tiles>>, pos: (usize, usize)) -> bool {
+// https://web.archive.org/web/20130126163405/http://geomalgorithms.com/a03-_inclusion.html
+fn is_inside_node(row: &Vec<(Tiles,Direction)>, column: usize) -> bool {
     let mut is_inside = false;
 
-    let mut path_intersections = 0;
+    let mut wn = 0;
 
-    let (row, column) = pos;
-
-    // check to the right
-    for i in column+1..map[row].len() {
-        if map[row][i] != Tiles::G {
-            path_intersections += 1;
+    for i in column+1..row.len() {
+        let dir = row[i].1;
+        match dir {
+            Direction::N => wn += 1,
+            Direction::S => wn -= 1,
+            Direction::E => wn += 1,
+            Direction::W => wn -= 1,
         }
-    }
-    if path_intersections % 2 == 1 {
+    }  
+
+    if wn != 0 {
         is_inside = true;
     }
-
-    // check to the left
-    path_intersections = 0;
-    for i in (0..column).rev() {
-        if map[row][i] != Tiles::G {
-            path_intersections += 1;
-        }
-    }
-
-    // checking both sides prevents edge cases of being on the edge
-    if path_intersections % 2 != 1 {
-        is_inside = is_inside && false;
-    }
-
-    println!("pos: {pos:?}, path_intersections: {path_intersections:?}, is_inside: {is_inside:?}");
+    
+    println!("winding number: {wn:?}");
 
     is_inside
 }
 
-fn generate_new_map(height: usize, width: usize, path: Vec<((i32, i32), usize)>) {
+// check if the row is all G to the left of the column, if so, cannot be an inside node
+fn is_left(row: &Vec<(Tiles,Direction)>, column: usize) -> bool {
+    let mut is_left = true;
+
+    for i in (0..column).rev() {
+        if row[i].0 != Tiles::G {
+            is_left = false;
+            break;
+        }
+    }
+
+    is_left
+}
+
+// check if the row is all G to the right of the column, if so, cannot be an inside node
+fn is_right(row: &Vec<(Tiles,Direction)>, column: usize) -> bool {
+    let mut is_right = true;
+
+    for i in column+1..row.len() {
+        if row[i].0 != Tiles::G {
+            is_right = false;
+            break;
+        }
+    }
+
+    is_right
+}
+
+fn generate_new_map(height: usize, width: usize, path: Vec<((i32, i32), Direction)>) {
     let mut map: Vec<Vec<usize>> = vec![vec![0; width]; height];
 
-    for (pos, steps) in path {
+    for (steps, (pos, _)) in path.iter().enumerate() {
         map[pos.0 as usize][pos.1 as usize] = steps;
     }
 
