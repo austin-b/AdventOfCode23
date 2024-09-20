@@ -1,7 +1,7 @@
 // https://adventofcode.com/2023/day/10
 //
 // For inside node calculation:
-// https://web.archive.org/web/20130126163405/http://geomalgorithms.com/a03-_inclusion.html
+// https://web.archive.org/web/20190818063056/http://geomalgorithms.com/a03-_inclusion.html
 
 use std::fs;
 
@@ -166,7 +166,6 @@ fn find_path(map: &Vec<Vec<Tiles>>, starting: (i32, i32)) -> Vec<((i32, i32), Di
 }
 
 // output: what to add to the current position, and the direction you're coming from into new position
-// TODO: calculate winding number here?
 fn next_step(current_tile: Tiles, from_direction: Direction) -> Option<((i32, i32), Direction)> {
     match current_tile {
         Tiles::NS => {
@@ -240,12 +239,9 @@ fn is_inside_node(row: &Vec<(Tiles,Direction)>, column: usize) -> bool {
     let mut wn = 0;
 
     for i in column+1..row.len() {
-        let dir = row[i].1;
-        match dir {
-            Direction::N => wn += 1,
-            Direction::S => wn -= 1,
-            Direction::E => wn += 1,
-            Direction::W => wn -= 1,
+        let (tile, direction) = row[i];
+        if tile != Tiles::G {
+            wn += crossing_value(tile, direction).unwrap();
         }
     }  
 
@@ -256,6 +252,49 @@ fn is_inside_node(row: &Vec<(Tiles,Direction)>, column: usize) -> bool {
     println!("winding number: {wn:?}");
 
     is_inside
+}
+
+// If the edge crosses the positive ray from below to above, the crossing is positive (+1); but if it crosses from above to below, the crossing is negative (–1).
+fn crossing_value(current_tile: Tiles, from_direction: Direction) -> Option<i32> {
+    match current_tile {
+        Tiles::NS => {
+            match from_direction {
+                Direction::N => Some(-1),
+                Direction::S => Some(1),
+                _ => None,
+            }
+        }
+        Tiles::EW => Some(1),
+        Tiles::NE => {
+            match from_direction {
+                Direction::N => Some(-1),
+                Direction::E => Some(1),
+                _ => None,
+            }
+        }
+        Tiles::NW => {
+            match from_direction {
+                Direction::N => Some(-1),
+                Direction::W => Some(1),
+                _ => None,
+            }
+        }
+        Tiles::SW => {
+            match from_direction {
+                Direction::S => Some(1),
+                Direction::W => Some(-1),
+                _ => None,
+            }
+        }
+        Tiles::SE => {
+            match from_direction {
+                Direction::S => Some(1),
+                Direction::E => Some(-1),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 // check if the row is all G to the left of the column, if so, cannot be an inside node
