@@ -13,12 +13,12 @@ enum Cell {
 fn parse_galaxies() -> Vec<(usize, usize)> {
 
     // EXAMPLE 1
-    let contents = "...#......\n.......#..\n#.........\n..........\n......#...\n.#........\n.........#\n..........\n.......#..\n#...#.....";
+    // let contents = "...#......\n.......#..\n#.........\n..........\n......#...\n.#........\n.........#\n..........\n.......#..\n#...#.....";
 
     // PUZZLE
-    // let contents = fs::read_to_string("src/input.txt").expect("Something went wrong reading the file");
+     let contents = fs::read_to_string("src/input.txt").expect("Something went wrong reading the file");
         
-    let mut map: Vec<Vec<Cell>> = contents.lines().map(|line| {
+    let map: Vec<Vec<Cell>> = contents.lines().map(|line| {
         line.chars().map(|c| match c {
             '.' => Cell::Empty,
             '#' => Cell::Galaxy,
@@ -85,7 +85,10 @@ fn apply_cosmic_expansion(map: Vec<Vec<Cell>>, galaxies: Vec<(usize, usize)>) ->
     // columns
     for i in 0..map[0].len() {
         if map.iter().all(|row| row[i] == Cell::Empty) {
-            
+            for pair in &mut galaxy_pairs {
+                let ((_, y1), (_, y2)) = pair;
+                if *y1 > i { *y2 += expansion_factor-1;}
+            }
             // println!("expanding column {}", i);
         }
     }
