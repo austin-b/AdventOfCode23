@@ -63,6 +63,10 @@ fn main() {
     println!("\nSum of shortest paths: {}", sum);
 }
 
+// Applies the "cosmic expansion" to the points of the galaxies themselves, instead of to the map.
+// 
+// Doubles each galaxy to create a pair, then checks the map and applies the expansion factor to the second galaxy of the pair,
+// and returns only the second galaxy.
 fn apply_cosmic_expansion(map: Vec<Vec<Cell>>, galaxies: Vec<(usize, usize)>) -> Vec<(usize, usize)> {
     let galaxies_clone = galaxies.clone();
     let mut galaxy_pairs: Vec<((usize, usize), (usize, usize))> = galaxies.into_iter().zip(galaxies_clone.into_iter()).collect();
