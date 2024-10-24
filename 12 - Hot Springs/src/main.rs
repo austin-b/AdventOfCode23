@@ -1,8 +1,9 @@
 // https://adventofcode.com/2023/day/12
 
+use std::{collections::HashMap, fs};
 use rayon::prelude::*;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 enum SpringState {
     Operational,
     Damaged,
@@ -12,9 +13,13 @@ enum SpringState {
 fn main() {
     
     // EXAMPLE
-    let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
+    // let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
 
-    let mut conditions: Vec<(Vec<SpringState>, Vec<usize>)> = contents.lines().map(|line: &str| {
+    // PUZZLE
+    let contents: String = fs::read_to_string("src/input.txt")
+        .expect("Something went wrong reading the file");
+
+    let conditions: Vec<(Vec<SpringState>, Vec<usize>)> = contents.lines().map(|line: &str| {
         let records: Vec<&str> = line.split(" ").collect();
         let states: Vec<SpringState> = records[0].chars().map(|spring| {
             match spring {
@@ -24,8 +29,7 @@ fn main() {
                 _ => panic!("Invalid character"),
             }
         }).collect();
-        let mut groups: Vec<usize> = records[1].split(",").map(|group| group.parse::<usize>().unwrap()).collect();
-        groups.sort();
+        let groups: Vec<usize> = records[1].split(",").map(|group| group.parse::<usize>().unwrap()).collect();
         (states, groups)
     }).collect();
 
@@ -34,24 +38,32 @@ fn main() {
     //     println!("{:?}", record);
     // }
 
-    println!("\nsum of arrangements: {:?}", find_number_of_arrangements(&conditions[1]));
+    // let mut sum: usize = 0;
+    // for record in &conditions {
+    //     let r = find_number_of_arrangements(record);
+    //     println!("sum of arrangements for line {:?}: {:?}\n", record.0, r);
+    //     sum += r;
+    // }
+    
+    let sum: usize = conditions.par_iter().map(|r| find_number_of_arrangements(r)).sum();
 
-    // let sum: usize = conditions.par_iter().map(|r| find_number_of_arrangements(r)).sum();
-
-    // println!("\nsum of arrangements: {:?}", sum);
+    println!("\nsum of arrangements (total): {:?}", sum);
 }
 
-// TODO: how to handle duplicate arrangements?
 fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize {
+    println!("record: {:?}", record.0);
     let states = &record.0;
     let mut unknowns: Vec<usize> = states.iter().enumerate().filter(|(_, &s)| s == SpringState::Unknown).map(|(i, _)| i).collect();
-
     let groups = &record.1;
     let remaining_broken = groups.iter().sum::<usize>() - states.iter().filter(|&s| s == &SpringState::Damaged).count();
+    // println!("remaining_broken: {:?}", remaining_broken);
 
     let mut arrangements: usize = 0;
 
     if check_if_complete(states, groups) { return 1; } // if the record is already complete, return 1
+
+    // create a cache to prevent duplicate calls to check_if_complete
+    let mut cache = HashMap::new();
 
     // for the test case, we will assume that all unknowns are operational and then replace them with damaged in the while loop
     let base_test_states: Vec<SpringState>  = states.iter().map(|&s| 
@@ -78,13 +90,19 @@ fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize
                     test_states[unknowns[x]] = SpringState::Damaged;
                 }
             }
-            println!("{:?}", test_states);
-            if check_if_complete(&test_states, groups) { 
-                println!("found complete"); 
-                arrangements += 1; 
-            } else {
-                test_states = base_test_states.clone();
-            }
+            // println!("{:?}", test_states);
+
+            // check cache for the test_states
+            // if it has already been tested, we do not need to check again
+            arrangements += if cache.contains_key(&test_states) {0} else {
+                let v = check_if_complete(&test_states, groups);
+                cache.insert(test_states.clone(), v);
+                v as usize
+            };
+
+            // reset the test_states
+            test_states = base_test_states.clone();
+
             c[i] += 1;
             i = 0;
         } else {
@@ -103,6 +121,10 @@ fn check_if_complete(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
 
     let mut groups = groups.clone();
 
+    // quick check to make sure we only use the max amount of damaged springs
+    let damaged_springs = states.iter().filter(|&s| s == &SpringState::Damaged).count();
+    if damaged_springs > groups.iter().sum::<usize>() { return false; }
+
     for state in states {
         match state {
             &SpringState::Damaged => if countable {count += 1},
@@ -111,8 +133,10 @@ fn check_if_complete(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
                 countable = true;
     
                 if count > 0 {
-                    // println!("found a grouping of {}", count);
-                    if let Ok(index) = groups.binary_search(&count) { groups.remove(index); }
+                    if count == groups[0] { 
+                        groups.remove(0);
+                        //println!("found a grouping of {}", count);
+                    }
                 }
     
                 count = 0;
@@ -122,8 +146,10 @@ fn check_if_complete(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
 
     // check for the last group, if available
     if countable && count > 0 {
-        println!("found a grouping of {}", count);
-        if let Ok(index) = groups.binary_search(&count) { groups.remove(index); }
+        if count == groups[0] { 
+            groups.remove(0);
+            //println!("found a grouping of {}", count);
+        }
     }
 
     groups.is_empty()
