@@ -52,15 +52,15 @@ fn main() {
 
 fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize {
     println!("record: {:?}", record.0);
-    let states = &record.0;
+    let states = record.0.clone();
     let mut unknowns: Vec<usize> = states.iter().enumerate().filter(|(_, &s)| s == SpringState::Unknown).map(|(i, _)| i).collect();
-    let groups = &record.1;
+    let groups = record.1.clone();
     let remaining_broken = groups.iter().sum::<usize>() - states.iter().filter(|&s| s == &SpringState::Damaged).count();
     // println!("remaining_broken: {:?}", remaining_broken);
 
     let mut arrangements: usize = 0;
 
-    if check_if_complete(states, groups) { return 1; } // if the record is already complete, return 1
+    if check_if_complete(&states, &groups) { return 1; } // if the record is already complete, return 1
 
     // create a cache to prevent duplicate calls to check_if_complete
     let mut cache = HashMap::new();
@@ -95,7 +95,7 @@ fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize
             // check cache for the test_states
             // if it has already been tested, we do not need to check again
             arrangements += if cache.contains_key(&test_states) {0} else {
-                let v = check_if_complete(&test_states, groups);
+                let v = check_if_complete(&test_states, &groups);
                 cache.insert(test_states.clone(), v);
                 v as usize
             };
