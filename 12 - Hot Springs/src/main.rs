@@ -13,11 +13,11 @@ enum SpringState {
 fn main() {
     
     // EXAMPLE
-    // let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
+    let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
 
     // PUZZLE
-    let contents: String = fs::read_to_string("src/input.txt")
-        .expect("Something went wrong reading the file");
+    // let contents: String = fs::read_to_string("src/input.txt")
+    //     .expect("Something went wrong reading the file");
 
     let conditions: Vec<(Vec<SpringState>, Vec<usize>)> = contents.lines().map(|line: &str| {
         let records: Vec<&str> = line.split(" ").collect();
@@ -51,66 +51,19 @@ fn main() {
 }
 
 fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize {
-    println!("record: {:?}", record.0);
-    let states = record.0.clone();
-    let mut unknowns: Vec<usize> = states.iter().enumerate().filter(|(_, &s)| s == SpringState::Unknown).map(|(i, _)| i).collect();
-    let groups = record.1.clone();
-    let remaining_broken = groups.iter().sum::<usize>() - states.iter().filter(|&s| s == &SpringState::Damaged).count();
-    // println!("remaining_broken: {:?}", remaining_broken);
-
+    let states: &Vec<SpringState> = &record.0;
+    let groups: &Vec<usize> = &record.1;
     let mut arrangements: usize = 0;
-
-    if check_if_complete(&states, &groups) { return 1; } // if the record is already complete, return 1
-
-    // create a cache to prevent duplicate calls to check_if_complete
-    let mut cache = HashMap::new();
-
-    // for the test case, we will assume that all unknowns are operational and then replace them with damaged in the while loop
-    let base_test_states: Vec<SpringState>  = states.iter().map(|&s| 
-        if s == SpringState::Unknown {SpringState::Operational} else {s}).collect::<Vec<SpringState>>();
-    let mut test_states: Vec<SpringState> = base_test_states.clone();
-
-    /* non-recursive Heap's algorithm (https://en.wikipedia.org/wiki/Heap's_algorithm) */
-    let mut c: Vec<usize> = vec![0; unknowns.len()]; // encoding of the stack state
-    let mut i: usize = 0; // first index
-    while i < unknowns.len() {
-        if c[i] < i {
-            if i % 2 == 0 {
-                unknowns.swap(0, i);
-
-                // replace the first remaining_broken unknowns with damaged
-                for x in 0..remaining_broken {
-                    test_states[unknowns[x]] = SpringState::Damaged;
-                }
-            } else {
-                unknowns.swap(c[i], i);
-                
-                // replace the first remaining_broken unknowns with damaged
-                for x in 0..remaining_broken {
-                    test_states[unknowns[x]] = SpringState::Damaged;
-                }
-            }
-            // println!("{:?}", test_states);
-
-            // check cache for the test_states
-            // if it has already been tested, we do not need to check again
-            arrangements += if cache.contains_key(&test_states) {0} else {
-                let v = check_if_complete(&test_states, &groups);
-                cache.insert(test_states.clone(), v);
-                v as usize
-            };
-
-            // reset the test_states
-            test_states = base_test_states.clone();
-
-            c[i] += 1;
-            i = 0;
-        } else {
-            c[i] = 0;
-            i += 1;
+    for (loc, state) in states.clone().into_iter().enumerate() {
+        if state == SpringState::Unknown {
+            let mut states_copy_damaged = states.clone();
+            states_copy_damaged[loc] = SpringState::Damaged;
+            let mut states_copy_operational = states.clone();
+            states_copy_operational[loc] = SpringState::Operational;
+            arrangements = find_number_of_arrangements(&(states_copy_damaged, groups.clone())) + find_number_of_arrangements(&(states_copy_operational, groups.clone()));
         }
     }
-
+    arrangements += if check_if_complete(&states, &groups) {1} else {0};
     arrangements
 }
 
