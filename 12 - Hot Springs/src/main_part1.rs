@@ -13,11 +13,11 @@ enum SpringState {
 fn main() {
     
     // EXAMPLE
-    let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
+    // let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
 
     // PUZZLE
-    // let contents: String = fs::read_to_string("src/input.txt")
-    //     .expect("Something went wrong reading the file");
+    let contents: String = fs::read_to_string("src/input.txt")
+        .expect("Something went wrong reading the file");
 
     let conditions: Vec<(Vec<SpringState>, Vec<usize>)> = contents.lines().map(|line: &str| {
         let records: Vec<&str> = line.split(" ").collect();
@@ -29,21 +29,13 @@ fn main() {
                 _ => panic!("Invalid character"),
             }
         }).collect();
-        let states = unfold_states(states);
-        let groups: Vec<usize> = records[1].split(",").map(|group| group.parse::<usize>().unwrap()).collect::<Vec<usize>>().repeat(5);
+        let groups: Vec<usize> = records[1].split(",").map(|group| group.parse::<usize>().unwrap()).collect();
         (states, groups)
     }).collect();
     
     let sum: usize = conditions.par_iter().map(|r| find_number_of_arrangements(r)).sum();
 
     println!("\nsum of arrangements (total): {:?}", sum);
-}
-
-fn unfold_states(mut states: Vec<SpringState>) -> Vec<SpringState> {
-    states.push(SpringState::Unknown);
-    let mut states = states.repeat(5);
-    states.pop();
-    states
 }
 
 fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize {
