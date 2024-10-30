@@ -54,7 +54,10 @@ fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize
 
     let unknowns: VecDeque<usize> = states.iter().enumerate().filter(|(_, &s)| s == SpringState::Unknown).map(|(i, _)| i).collect();
 
-    check_permutations(states.clone(), groups.clone(), unknowns)
+    let arrangements = check_permutations(states.clone(), groups.clone(), unknowns);
+
+    println!("arrangements: {:?}", arrangements);
+    arrangements
 }
 
 fn check_permutations(states: Vec<SpringState>, groups: Vec<usize>, mut unknowns: VecDeque<usize>) -> usize {
@@ -82,42 +85,7 @@ fn check_permutations(states: Vec<SpringState>, groups: Vec<usize>, mut unknowns
 }
 
 fn check_if_complete(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
-
-    let mut countable: bool = true;
-    let mut count: usize = 0;
-
-    let mut groups = groups.clone();
-
-    // quick check to make sure we only use the max amount of damaged springs
-    let damaged_springs = states.iter().filter(|&s| s == &SpringState::Damaged).count();
-    if damaged_springs > groups.iter().sum::<usize>() { return false; }
-
-    for state in states {
-        match state {
-            &SpringState::Damaged => if countable {count += 1},
-            &SpringState::Unknown => countable = false,
-            &SpringState::Operational => {
-                countable = true;
-    
-                if count > 0 {
-                    if count == groups[0] { 
-                        groups.remove(0);
-                        //println!("found a grouping of {}", count);
-                    }
-                }
-    
-                count = 0;
-            }
-        }
-    }
-
-    // check for the last group, if available
-    if countable && count > 0 {
-        if count == groups[0] { 
-            groups.remove(0);
-            //println!("found a grouping of {}", count);
-        }
-    }
-
-    groups.is_empty()
+    // separates out the groups of damaged springs and checks if the counts match the predefined groups
+    states.chunk_by(|a, b| a == b).filter(|x| x[0] == SpringState::Damaged)
+        .map(|x| x.len()).eq(groups.iter().cloned())
 }
