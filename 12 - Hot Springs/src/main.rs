@@ -153,6 +153,7 @@ fn check_if_valid(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
         }
     }
 
+    // TODO: FIX, does not accurately check for final group -- too many permutations are considered valid
     // check for the last group, if available
     if count > 0 && group_to_check == groups.len() - 1{
         if count == groups[group_to_check] { 
