@@ -13,8 +13,8 @@ enum SpringState {
 fn main() {
     
     // EXAMPLE
-    // let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
-    let contents = "???.### 1,1,3";
+    let contents = "???.### 1,1,3\n.??..??...?##. 1,1,3\n?#?#?#?#?#?#?#? 1,3,1,6\n????.#...#... 4,1,1\n????.######..#####. 1,6,5\n?###???????? 3,2,1";
+    // let contents = ".??..??...?##. 1,1,3";
 
     // PUZZLE
     // let contents: String = fs::read_to_string("src/input.txt")
@@ -48,20 +48,87 @@ fn unfold_states(mut states: Vec<SpringState>) -> Vec<SpringState> {
 }
 
 fn find_number_of_arrangements(record: &(Vec<SpringState>, Vec<usize>)) -> usize {
-    println!("record: {:?}, groups: {:?}", record.0, record.1);
+    println!("record: {:?}\ngroups: {:?}", record.0, record.1);
 
     let states: &Vec<SpringState> = &record.0;
     let groups: &Vec<usize> = &record.1;
 
-    let unknowns: VecDeque<usize> = states.iter().enumerate().filter(|(_, &s)| s == SpringState::Unknown).map(|(i, _)| i).collect();
+    // let unknowns: VecDeque<usize> = states.iter().enumerate().filter(|(_, &s)| s == SpringState::Unknown).map(|(i, _)| i).collect();
 
-    let arrangements = check_permutations(states.clone(), &groups, unknowns);
+    let arrangements = check_permutations(states.clone(), 0, groups.clone(), 0);
 
     println!("arrangements: {:?}", arrangements);
     arrangements
 }
 
-fn check_permutations(states: Vec<SpringState>, groups: &Vec<usize>, mut unknowns: VecDeque<usize>) -> usize {
+fn check_permutations(states: Vec<SpringState>, loc: usize, remaining_groups: Vec<usize>, mut damaged_count: usize) -> usize {
+    // println!("states: {:?}\nloc: {:?}\ncurrent_state: {:?}\nremaining_groups: {:?}\ndamaged_count: {:?}", states, loc, states[loc], remaining_groups, damaged_count);
+
+    let mut current_group: usize = 0;
+
+    // TODO: testing these base cases is messed up, needs to be fixed
+    if remaining_groups.len() == 0 {
+        if states.len() == loc {
+            return 1;
+        } else if states[loc] != SpringState::Damaged {
+            return 0;
+        }
+        else if states.len() > loc {
+            return check_permutations(states, loc + 1, remaining_groups, damaged_count)
+        } 
+        // return if damaged_count == 0 && states[loc] != SpringState::Damaged {1} else {
+        //     // println!("invalid");
+        //     0
+        // };
+    } else {
+        current_group = remaining_groups[0];
+    }
+
+    if loc == states.len() {
+        return if damaged_count == current_group {1} else {
+            // println!("invalid");
+            0
+        };
+    }
+
+    match states[loc] {
+        SpringState::Damaged => {
+            damaged_count += 1;
+            if damaged_count > current_group {
+                // println!("invalid");
+                return 0;
+            } else {
+                return check_permutations(states, loc + 1, remaining_groups.clone(), damaged_count);
+            }
+        },
+        SpringState::Operational => {
+            if damaged_count > 0 && damaged_count != current_group {
+                // println!("invalid");
+                return 0;
+            } else if damaged_count > 0 && damaged_count == current_group {
+                return check_permutations(states, loc + 1, remaining_groups[1..].to_vec(), 0);
+            } else {
+                return check_permutations(states, loc + 1, remaining_groups.clone(), 0);
+            }
+        },
+        SpringState::Unknown => {
+            let mut arrangements = 0;
+            let mut states_copy_damaged = states.clone();
+            states_copy_damaged[loc] = SpringState::Damaged;
+            arrangements += check_permutations(states_copy_damaged, loc, remaining_groups.clone(), damaged_count);
+
+            let mut states_copy_operational = states.clone();
+            states_copy_operational[loc] = SpringState::Operational;
+            arrangements += check_permutations(states_copy_operational, loc, remaining_groups.clone(), damaged_count);
+
+            return arrangements;
+        }
+    }
+    
+}
+
+/*
+fn check_permutations_old(states: Vec<SpringState>, groups: &Vec<usize>, mut unknowns: VecDeque<usize>) -> usize {
     let mut arrangements: usize = 0;
 
     let next_unknown = unknowns.pop_front();
@@ -95,12 +162,6 @@ fn check_permutations(states: Vec<SpringState>, groups: &Vec<usize>, mut unknown
     }
     
     arrangements
-}
-
-fn check_if_complete(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
-    // separates out the groups of damaged springs and checks if the counts match the predefined groups
-    states.chunk_by(|a, b| a == b).filter(|x| x[0] == SpringState::Damaged)
-        .map(|x| x.len()).eq(groups.iter().cloned())
 }
 
 fn check_if_valid(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
@@ -166,3 +227,4 @@ fn check_if_valid(states: &Vec<SpringState>, groups: &Vec<usize>) -> bool {
     if valid {println!("states: {:?}\ngroups: {:?}\nvalid: {:?}, last count = {:?}, group_to_check = {:?}", states, groups, valid, count, group_to_check);}
     valid
 }
+*/
